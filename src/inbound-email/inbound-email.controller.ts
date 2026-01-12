@@ -8,15 +8,17 @@ import {
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { SendgridService } from '../sendgrid/sendgrid.service';
 
 @Controller()
 export class InboundEmailController {
+  constructor(private readonly sendgrid: SendgridService) {}
 
   @Post('inbound-email')
   @UseInterceptors(
     AnyFilesInterceptor({
       storage: diskStorage({
-        destination: './uploads',
+        destination: '/tmp/uploads', // IMPORTANT for Render
         filename: (req, file, cb) => {
           const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
           cb(null, unique + extname(file.originalname));
@@ -30,22 +32,20 @@ export class InboundEmailController {
   ) {
     console.log('📩 New Email Received');
 
-    const { from, to, subject, text, html } = body;
+    const { from, to, subject, text } = body;
 
     console.log('From:', from);
-    console.log('To:', to);
     console.log('Subject:', subject);
-    console.log('Text:', text?.substring(0, 300));
 
-    if (files?.length) {
-      console.log(`📎 Attachments: ${files.length}`);
-      files.forEach((f) => {
-        console.log('Saved file:', f.path);
-      });
-    } else {
-      console.log('No attachments');
+    // Extract email from "Name <email>"
+    const senderEmail = from?.match(/<(.+)>/)?.[1] || from;
+
+    // ✅ Send acknowledgement
+    if (senderEmail) {
+      await this.sendgrid.sendAcknowledgement(senderEmail, subject);
+      console.log('✅ Acknowledgement sent to', senderEmail);
     }
 
-    return 'OK'; // SendGrid needs 200 response
+    return 'OK';
   }
 }
