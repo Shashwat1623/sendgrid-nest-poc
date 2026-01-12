@@ -1,26 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import * as sgMail from '@sendgrid/mail';
+
+const sgMail = require('@sendgrid/mail');
 
 @Injectable()
 export class SendgridService {
   constructor() {
-    sgMail.setApiKey(process.env.SENDGRID_KEY!);
+    if (!process.env.SENDGRID_KEY) {
+      console.error('❌ SENDGRID_KEY not set');
+    }
+    sgMail.setApiKey(process.env.SENDGRID_KEY);
   }
 
   async sendAcknowledgement(to: string, subject: string) {
     const msg = {
       to,
-      from: process.env.FROM_EMAIL!,
+      from: process.env.FROM_EMAIL,
       subject: 'We received your request',
-      text: `Thanks for contacting us. We have received your message: "${subject}". Our team/AI will get back to you shortly.`,
-      html: `
-        <p>Thanks for contacting us.</p>
-        <p>We have received your message:</p>
-        <blockquote>${subject}</blockquote>
-        <p>Our AI agent is reviewing it.</p>
-      `,
+      text: `Thanks for contacting us. We received: "${subject}"`,
+      html: `<p>Thanks for contacting us.</p><p><b>${subject}</b></p>`,
     };
 
-    await sgMail.send(msg);
+    const res = await sgMail.send(msg);
+    console.log('✅ SendGrid response:', res[0].statusCode);
   }
 }
