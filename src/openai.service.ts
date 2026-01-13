@@ -7,7 +7,12 @@ export class OpenaiService {
 
   constructor() {
     this.client = new OpenAI({
-      apiKey: process.env.OPENAI_KEY,
+      apiKey: process.env.OPENAI_KEY, // sk-or-v1-...
+      baseURL: 'https://openrouter.ai/api/v1',
+      defaultHeaders: {
+        'HTTP-Referer': 'https://sendgrid-nest-poc.onrender.com', // can be any valid URL
+        'X-Title': 'SendGrid AI Support POC',
+      },
     });
   }
 
