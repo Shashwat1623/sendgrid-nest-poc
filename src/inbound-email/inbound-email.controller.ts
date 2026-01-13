@@ -9,10 +9,15 @@ import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { SendgridService } from '../sendgrid/sendgrid.service';
+import { OpenaiService } from 'src/openai.service';
 
 @Controller()
 export class InboundEmailController {
-  constructor(private readonly sendgrid: SendgridService) {}
+  constructor(
+    private readonly sendgrid: SendgridService,
+    private readonly openai: OpenaiService,
+  ) {}
+
 
   @Post('inbound-email')
   @UseInterceptors(
@@ -41,10 +46,15 @@ export class InboundEmailController {
     const senderEmail = from?.match(/<(.+)>/)?.[1] || from;
 
     // ✅ Send acknowledgement
-    if (senderEmail) {
-      await this.sendgrid.sendAcknowledgement(senderEmail, subject);
-      console.log('✅ Acknowledgement sent to', senderEmail);
-    }
+    const question = body.text || body.subject;
+
+    console.log('🧠 Asking AI:', question);
+
+    const aiReply = await this.openai.ask(question);
+
+    console.log('🤖 AI reply:', aiReply);
+
+    await this.sendgrid.sendAcknowledgement(senderEmail, aiReply);
 
     return 'OK';
   }

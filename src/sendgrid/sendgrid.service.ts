@@ -11,16 +11,17 @@ export class SendgridService {
     sgMail.setApiKey(process.env.SENDGRID_KEY);
   }
 
-  async sendAcknowledgement(to: string, subject: string) {
-    const msg = {
-      to,
-      from: process.env.FROM_EMAIL,
-      subject: 'We received your request',
-      text: `Thanks for contacting us. We received: "${subject}"`,
-      html: `<p>Thanks for contacting us.</p><p><b>${subject}</b></p>`,
-    };
+  async sendAcknowledgement(to: string, aiReply: string) {
+  const msg = {
+    to,
+    from: process.env.FROM_EMAIL,
+    subject: 'Re: Your support request',
+    text: aiReply,
+    html: `<p>${aiReply.replace(/\n/g, '<br/>')}</p>`,
+  };
 
-    const res = await sgMail.send(msg);
-    console.log('✅ SendGrid response:', res[0].statusCode);
-  }
+  const res = await sgMail.send(msg);
+  console.log('✅ SendGrid response:', res[0].statusCode);
+}
+
 }
